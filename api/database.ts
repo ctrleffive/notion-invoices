@@ -6,19 +6,15 @@ const notion = new Client({ auth: apiKey });
 export async function GET(request: any) {
   try {
     const url = new URL(request.url);
-    const name = url.searchParams.get("name");
-    if (!name) throw new Error("no-name");
+    const databaseId = url.searchParams.get("databaseId");
 
-    const notionResponse = await notion.search({
-      query: name,
-      filter: {
-        value: "database",
-        property: "object",
-      },
+    if (!databaseId) throw new Error("no-databaseId");
+
+    const notionResponse = await notion.databases.retrieve({
+      database_id: databaseId,
     });
 
-    const database: any = notionResponse.results[0];
-    if (!database) throw new Error("not-found");
+    const database: any = notionResponse;
 
     return new Response(
       JSON.stringify(
@@ -30,11 +26,12 @@ export async function GET(request: any) {
         null,
         "  ",
       ),
-      // { headers: { "Content-Type": "application/json" } },
+      { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
     return new Response(
       JSON.stringify({ success: false, message: error?.message || "unknown" }, null, "  "),
+      { headers: { "Content-Type": "application/json" } },
     );
   }
 }

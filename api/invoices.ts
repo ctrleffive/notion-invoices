@@ -19,12 +19,16 @@ export async function GET(request: any) {
       const invoices: any[] = notionResponse.results.map((item: any) => {
         return {
           id: item.id,
+          number: item.properties["Number"].formula.number,
           name: item.properties["Name"].title[0].plain_text,
           invoiceTo: item.properties["Invoice To"].rich_text[0].plain_text,
           address: item.properties["Address"].rich_text[0].plain_text,
+          email: item.properties["Email"].email,
+          phone: item.properties["Phone"].rich_text[0].plain_text,
           invoiceDate: item.properties["Invoice Date"].date.start,
           dueDate: item.properties["Due Date"].date.start,
           signedBy: item.properties["Signed By"].select.name,
+          amount: item.properties["Amount"].number,
         };
       });
 
@@ -38,7 +42,12 @@ export async function GET(request: any) {
       const block_id = contentResponse.results[0].id;
 
       const tableResponse = await notion.blocks.children.list({ block_id });
-      const results = tableResponse.results;
+      const results: any[] = tableResponse.results;
+
+      const columnNames = results[0].table_row.cells.map((item: any) => {
+        return item[0].plain_text;
+      });
+
       results.shift();
 
       const items = results.map((item: any) => {
@@ -53,22 +62,29 @@ export async function GET(request: any) {
         JSON.stringify(
           {
             id: pageResponse.id,
+            number: pageResponse.properties["Number"].formula.number,
             name: pageResponse.properties["Name"].title[0].plain_text,
             invoiceTo: pageResponse.properties["Invoice To"].rich_text[0].plain_text,
             address: pageResponse.properties["Address"].rich_text[0].plain_text,
+            email: pageResponse.properties["Email"].email,
+            phone: pageResponse.properties["Phone"].rich_text[0].plain_text,
             invoiceDate: pageResponse.properties["Invoice Date"].date.start,
             dueDate: pageResponse.properties["Due Date"].date.start,
             signedBy: pageResponse.properties["Signed By"].select.name,
+            amount: pageResponse.properties["Amount"].number,
+            columnNames,
             items,
           },
           null,
           "  ",
         ),
+        { headers: { "Content-Type": "application/json" } },
       );
     }
   } catch (error) {
     return new Response(
       JSON.stringify({ success: false, message: error.message || "unknown" }, null, "  "),
+      { headers: { "Content-Type": "application/json" } },
     );
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -12,7 +12,6 @@ export const InvoiceDetails = () => {
   const [invoiceData, setInvoiceData] = useState<InvoiceModel | undefined>();
   const [isLoading, setIsLoading] = useState(true);
 
-  const navigate = useNavigate();
   const { databaseId, invoiceId } = useParams();
 
   const getInvoiceData = async () => {

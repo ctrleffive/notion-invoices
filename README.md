@@ -10,5 +10,5 @@ A webapp for listing and rendering invoices as PDFs with data source as Notion.
 - [ ] Invoice templates.
 - [ ] Invoice templates.
 - [ ] Helper functions.
-- [ ] State management.
-- [ ] Persistance.
+- [x] State management.
+- [x] Persistance.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -6,32 +6,29 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/design/ui/button";
 import { Card, CardHeader, CardTitle } from "@/design/ui/card";
 
-import { InvoiceModel } from "../types/Invoice";
+import { AsyncState } from "../types";
+
+import { useAppDispatch } from "../hooks/useAppDispatch";
+import { useAppSelector } from "../hooks/useAppSelector";
+
+import { AppActions } from "../store/app/slice";
 
 export const InvoiceDetails = () => {
-  const [invoiceData, setInvoiceData] = useState<InvoiceModel | undefined>();
-  const [isLoading, setIsLoading] = useState(true);
+  const invoice = useAppSelector((state) => state.app.invoice);
+  const invoiceState = useAppSelector((state) => state.app.invoiceState);
 
+  const isLoading = invoiceState == AsyncState.PENDING;
+
+  const dispatch = useAppDispatch();
   const { databaseId, invoiceId } = useParams();
 
-  const getInvoiceData = async () => {
-    try {
-      setIsLoading(true);
-      const apiResponse = await fetch(
-        `/api/invoices?databaseId=${databaseId}&invoiceId=${invoiceId}`,
-      );
-      const data = await apiResponse.json();
-      setInvoiceData(data);
-    } catch (error) {
-      //
-    } finally {
-      setIsLoading(false);
-    }
+  const getInvoice = async () => {
+    dispatch(AppActions.getInvoice({ invoiceId: invoiceId!, databaseId: databaseId! }));
   };
 
   useEffect(() => {
-    if (!invoiceData) {
-      getInvoiceData();
+    if (invoice?.id != invoiceId) {
+      getInvoice();
     }
   }, []);
 
@@ -48,7 +45,7 @@ export const InvoiceDetails = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{invoiceData?.name}</span>
+            <span>{invoice?.name}</span>
             <Button variant="secondary" asChild>
               <NavLink to={`/${databaseId}`}>
                 <ArrowLeft className="w-h mr-2 h-4" />

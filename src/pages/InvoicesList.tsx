@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, Loader2, LogOut, RefreshCcw } from "lucide-react";
+import { Eye, LogOut, RefreshCcw } from "lucide-react";
 import { z } from "zod";
 
 import {
@@ -31,8 +31,12 @@ import {
   TableRow,
 } from "@/design/ui/table";
 
-import { DatabaseModel } from "../types/Database";
-import { InvoiceModel } from "../types/Invoice";
+import { AsyncState } from "../types";
+
+import { useAppDispatch } from "../hooks/useAppDispatch";
+import { useAppSelector } from "../hooks/useAppSelector";
+
+import { AppActions } from "../store/app/slice";
 
 const formSchema = z.object({
   invoiceId: z.string().min(20, {
@@ -40,47 +44,15 @@ const formSchema = z.object({
   }),
 });
 
-export const Invoices = () => {
-  const [dbData, setDbData] = useState<DatabaseModel | undefined>();
-  const [invoices, setInvoices] = useState<InvoiceModel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const InvoicesList = () => {
+  const dbData = useAppSelector((state) => state.app.databaseData);
+  const invoices = useAppSelector((state) => state.app.invoices);
+  const invoicesState = useAppSelector((state) => state.app.invoicesState);
 
-  const navigate = useNavigate();
+  const isLoading = invoicesState == AsyncState.PENDING;
+
+  const dispatch = useAppDispatch();
   const { databaseId } = useParams();
-
-  const getDbData = () => {
-    try {
-      const localData = window.localStorage.getItem("database");
-      if (!localData) throw new Error("no-data");
-      const data = JSON.parse(localData);
-      if (data.id != databaseId) throw new Error("no-data");
-      setDbData(data);
-    } catch (error) {
-      navigate(`/?databaseId=${databaseId}`);
-    }
-  };
-
-  const fetchInvoices = async (isForced: boolean = false) => {
-    try {
-      setIsLoading(true);
-      let data: InvoiceModel[] = [];
-      if (!isForced) {
-        const localData = window.localStorage.getItem("invoices");
-        data = JSON.parse(localData || "[]");
-      }
-      if (data.length == 0) {
-        const apiResponse = await fetch(`/api/invoices?databaseId=${databaseId}`);
-        const apiInvoices = await apiResponse.text();
-        window.localStorage.setItem("invoices", apiInvoices);
-        data = JSON.parse(apiInvoices);
-      }
-      setInvoices(data);
-    } catch (error) {
-      //
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,52 +61,47 @@ export const Invoices = () => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    navigate(`/${databaseId}/${values.invoiceId}`);
+  const onGetInvoiceSubmit = async (values: z.infer<typeof formSchema>) => {
+    dispatch(AppActions.getInvoice({ invoiceId: values.invoiceId, databaseId: databaseId! }));
   };
 
   const onLogout = () => {
-    navigate("/");
-    window.localStorage.clear();
+    dispatch(AppActions.logout());
+  };
+
+  const fetchInvoices = () => {
+    dispatch(AppActions.getInvoices({ databaseId: databaseId! }));
   };
 
   useEffect(() => {
-    if (!dbData) {
-      getDbData();
+    if (!invoices.length) {
+      fetchInvoices();
     }
   }, []);
 
-  useEffect(() => {
-    if (dbData) {
-      fetchInvoices();
-    }
-  }, [dbData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="container py-8">
+    <div className="p-2 md:container md:py-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="items-center justify-between md:flex">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <img src={dbData?.icon} className="mr-4 h-6 w-6" alt="" />
                 <span>{dbData?.name}</span>
               </div>
-              {/* <Input placeholder="Search..." className="w-80" /> */}
             </div>
-            <div className="flex items-center justify-end space-x-4">
-              <Button variant="secondary" onClick={() => fetchInvoices(true)}>
-                <RefreshCcw className="w-h mr-2 h-4" />
-                <span>Reload</span>
-              </Button>
+            <div className="mt-6 items-center justify-end space-x-4 md:mt-0 md:flex">
+              {isLoading ? (
+                <Button variant="secondary" disabled>
+                  <RefreshCcw className="w-h h-4 animate-spin" />
+                  <span className="ml-2">loading...</span>
+                </Button>
+              ) : (
+                <Button variant="secondary" onClick={fetchInvoices}>
+                  <RefreshCcw className="w-h mr-2 h-4" />
+                  <span>Refresh</span>
+                </Button>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="secondary" size="icon">
@@ -150,8 +117,8 @@ export const Invoices = () => {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>No</AlertDialogCancel>
-                    <AlertDialogAction onClick={onLogout}>Yes, Logout!</AlertDialogAction>
+                    <AlertDialogCancel onClick={onLogout}>Yes, Logout!</AlertDialogCancel>
+                    <AlertDialogAction>No</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -162,24 +129,28 @@ export const Invoices = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="whitespace-nowrap">Name</TableHead>
+                <TableHead className="whitespace-nowrap">ID</TableHead>
+                <TableHead className="whitespace-nowrap">To</TableHead>
+                <TableHead className="whitespace-nowrap">Due Date</TableHead>
+                <TableHead className="whitespace-nowrap">Amount</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
-                  <TableCell>{invoice.name}</TableCell>
-                  <TableCell>#{invoice.number}</TableCell>
-                  <TableCell>{[invoice.invoiceTo, invoice.phone].join(", ")}</TableCell>
-                  <TableCell>{invoice.invoiceDate}</TableCell>
-                  <TableCell>{invoice.amount.toFixed(2)}</TableCell>
-                  <TableCell className="flex justify-end">
-                    <Button asChild size="sm">
+                  <TableCell className="whitespace-nowrap">{invoice.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <NavLink to={`/${databaseId}/${invoice.id}`}>#{invoice.number}</NavLink>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {[invoice.invoiceTo, invoice.phone].join(", ")}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{invoice.invoiceDate}</TableCell>
+                  <TableCell className="whitespace-nowrap">{invoice.amount.toFixed(2)}</TableCell>
+                  <TableCell className="flex justify-end whitespace-nowrap">
+                    <Button asChild size="sm" variant="ghost">
                       <NavLink to={`/${databaseId}/${invoice.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View</span>
@@ -193,7 +164,7 @@ export const Invoices = () => {
               <TableRow>
                 <TableCell colSpan={6}>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onGetInvoiceSubmit)}>
                       <div className="flex items-center justify-end space-x-4">
                         <p className="text-sm text-muted-foreground">
                           Couldn&apos;t find what you are looking for?

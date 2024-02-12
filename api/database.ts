@@ -17,21 +17,19 @@ export async function GET(request: any) {
     const database: any = notionResponse;
 
     return new Response(
-      JSON.stringify(
-        {
+      JSON.stringify({
+        success: true,
+        data: {
           id: database.id,
           name: database.title[0]?.plain_text,
           icon: database.icon?.file?.url,
         },
-        null,
-        "  ",
-      ),
+      }),
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
-    return new Response(
-      JSON.stringify({ success: false, message: error?.message || "unknown" }, null, "  "),
-      { headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ success: false, message: error?.message || "unknown" }), {
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

@@ -32,7 +32,12 @@ export async function GET(request: any) {
         };
       });
 
-      return new Response(JSON.stringify(invoices, null, "  "));
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: invoices,
+        }),
+      );
     } else {
       const promises: any[] = await Promise.all([
         notion.pages.retrieve({ page_id: invoiceId }),
@@ -59,8 +64,9 @@ export async function GET(request: any) {
       });
 
       return new Response(
-        JSON.stringify(
-          {
+        JSON.stringify({
+          success: true,
+          data: {
             id: pageResponse.id,
             number: pageResponse.properties["Number"].formula.number,
             name: pageResponse.properties["Name"].title[0].plain_text,
@@ -75,9 +81,7 @@ export async function GET(request: any) {
             columnNames,
             items,
           },
-          null,
-          "  ",
-        ),
+        }),
         { headers: { "Content-Type": "application/json" } },
       );
     }

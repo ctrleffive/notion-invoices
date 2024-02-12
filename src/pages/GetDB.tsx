@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -39,11 +39,12 @@ export const GetDB = () => {
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      databaseId: "30d7a109-4feb-4b1c-8bfd-bb6301bdc799",
+      databaseId: routeLocation.state?.databaseId || "",
     },
   });
 
@@ -56,6 +57,10 @@ export const GetDB = () => {
       navigate(`/${databaseData?.id}`);
     }
   }, [databaseData]);
+
+  useEffect(() => {
+    window.history.replaceState({}, "");
+  }, []);
 
   if (databaseData) return null;
 

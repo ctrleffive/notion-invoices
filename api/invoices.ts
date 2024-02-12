@@ -20,11 +20,14 @@ export async function GET(request: any) {
         return {
           id: item.id,
           number: item.properties["Number"].formula.number,
-          name: item.properties["Name"].title[0].plain_text,
-          invoiceTo: item.properties["Invoice To"].rich_text[0].plain_text,
-          address: item.properties["Address"].rich_text[0].plain_text,
-          email: item.properties["Email"].email,
-          phone: item.properties["Phone"].rich_text[0].plain_text,
+          name: item.properties["Name"].title[0]?.plain_text,
+          invoiceTo: item.properties["Invoice To"].rich_text[0]?.plain_text,
+          address: item.properties["Address"].rich_text[0]?.plain_text,
+          email: item.properties["Email"].rich_text[0]?.plain_text,
+          phone: item.properties["Phone"].rich_text[0]?.plain_text,
+          contactEmail: item.properties["Contact Email"].rich_text[0]?.plain_text,
+          contactPhone: item.properties["Contact Phone"].rich_text[0]?.plain_text,
+          contactLocation: item.properties["Contact Location"].rich_text[0]?.plain_text,
           invoiceDate: item.properties["Invoice Date"].date.start,
           dueDate: item.properties["Due Date"].date.start,
           signedBy: item.properties["Signed By"].select.name,
@@ -44,22 +47,18 @@ export async function GET(request: any) {
         notion.blocks.children.list({ block_id: invoiceId, page_size: 1 }),
       ]);
       const [pageResponse, contentResponse] = promises;
-      const block_id = contentResponse.results[0].id;
+      const block_id = contentResponse.results[0]?.id;
 
       const tableResponse = await notion.blocks.children.list({ block_id });
       const results: any[] = tableResponse.results;
-
-      const columnNames = results[0].table_row.cells.map((item: any) => {
-        return item[0].plain_text;
-      });
 
       results.shift();
 
       const items = results.map((item: any) => {
         return {
-          item: item.table_row.cells[0][0].plain_text,
-          quantity: Number(item.table_row.cells[1][0].plain_text),
-          price: Number(item.table_row.cells[2][0].plain_text),
+          item: item.table_row.cells[0][0]?.plain_text,
+          quantity: Number(item.table_row.cells[1][0]?.plain_text),
+          price: Number(item.table_row.cells[2][0]?.plain_text),
         };
       });
 
@@ -69,16 +68,18 @@ export async function GET(request: any) {
           data: {
             id: pageResponse.id,
             number: pageResponse.properties["Number"].formula.number,
-            name: pageResponse.properties["Name"].title[0].plain_text,
-            invoiceTo: pageResponse.properties["Invoice To"].rich_text[0].plain_text,
-            address: pageResponse.properties["Address"].rich_text[0].plain_text,
-            email: pageResponse.properties["Email"].email,
-            phone: pageResponse.properties["Phone"].rich_text[0].plain_text,
+            name: pageResponse.properties["Name"].title[0]?.plain_text,
+            invoiceTo: pageResponse.properties["Invoice To"].rich_text[0]?.plain_text,
+            address: pageResponse.properties["Address"].rich_text[0]?.plain_text,
+            email: pageResponse.properties["Email"].rich_text[0]?.plain_text,
+            phone: pageResponse.properties["Phone"].rich_text[0]?.plain_text,
+            contactEmail: pageResponse.properties["Contact Email"].rich_text[0]?.plain_text,
+            contactPhone: pageResponse.properties["Contact Phone"].rich_text[0]?.plain_text,
+            contactLocation: pageResponse.properties["Contact Location"].rich_text[0]?.plain_text,
             invoiceDate: pageResponse.properties["Invoice Date"].date.start,
             dueDate: pageResponse.properties["Due Date"].date.start,
             signedBy: pageResponse.properties["Signed By"].select.name,
             amount: pageResponse.properties["Amount"].number,
-            columnNames,
             items,
           },
         }),

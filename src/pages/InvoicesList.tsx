@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { NavLink, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, LogOut, RefreshCcw } from "lucide-react";
@@ -45,13 +45,14 @@ const formSchema = z.object({
 });
 
 export const InvoicesList = () => {
-  const dbData = useAppSelector((state) => state.app.databaseData);
+  const databaseData = useAppSelector((state) => state.app.databaseData);
   const invoices = useAppSelector((state) => state.app.invoices);
   const invoicesState = useAppSelector((state) => state.app.invoicesState);
 
   const isLoading = invoicesState == AsyncState.PENDING;
 
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { databaseId } = useParams();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -62,7 +63,7 @@ export const InvoicesList = () => {
   });
 
   const onGetInvoiceSubmit = async (values: z.infer<typeof formSchema>) => {
-    dispatch(AppActions.getInvoice({ invoiceId: values.invoiceId, databaseId: databaseId! }));
+    navigate(`/${databaseId}/${values.invoiceId}`);
   };
 
   const onLogout = () => {
@@ -74,20 +75,22 @@ export const InvoicesList = () => {
   };
 
   useEffect(() => {
-    if (!invoices.length) {
+    if (!invoices.length && databaseData) {
       fetchInvoices();
     }
   }, []);
 
+  if (!databaseData) return null;
+
   return (
-    <div className="p-2 md:container md:py-8">
+    <div className="mb-14 p-2 md:container md:mb-10 md:py-8">
       <Card>
         <CardHeader>
           <CardTitle className="items-center justify-between md:flex">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
-                <img src={dbData?.icon} className="mr-4 h-6 w-6" alt="" />
-                <span>{dbData?.name}</span>
+                <img src={databaseData?.icon} className="mr-4 h-6 w-6" alt="" />
+                <span>{databaseData?.name}</span>
               </div>
             </div>
             <div className="mt-6 items-center justify-end space-x-4 md:mt-0 md:flex">
@@ -117,8 +120,8 @@ export const InvoicesList = () => {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onLogout}>Yes, Logout!</AlertDialogCancel>
-                    <AlertDialogAction>No</AlertDialogAction>
+                    <AlertDialogCancel onClick={onLogout}>Yes</AlertDialogCancel>
+                    <AlertDialogAction>No, Stay here!</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

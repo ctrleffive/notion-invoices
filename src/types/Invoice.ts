@@ -5,6 +5,9 @@ export interface InvoiceModel {
   invoiceTo: string;
   email: string;
   phone: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactLocation: string;
   address: string;
   invoiceDate: string;
   dueDate: string;

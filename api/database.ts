@@ -1,6 +1,6 @@
 import { Client } from "@notionhq/client";
 
-import { apiResponse, transformDatabase } from "./helpers.ts";
+import { apiResponse, transformDatabase } from "./helpers.js";
 
 const apiKey = process.env.NOTION_SECRET;
 const notion = new Client({ auth: apiKey });

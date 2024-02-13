@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/design/ui/table";
+import { cn } from "@/design/utils";
 
 import { AsyncState } from "../types";
 
@@ -88,10 +89,8 @@ export const InvoicesList = () => {
         <CardHeader>
           <CardTitle className="items-center justify-between md:flex">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <img src={databaseData?.icon} className="mr-4 h-6 w-6" alt="" />
-                <span>{databaseData?.name}</span>
-              </div>
+              <span>{databaseData?.emoji}</span>
+              <span>{databaseData?.name}</span>
             </div>
             <div className="mt-6 items-center justify-end space-x-4 md:mt-0 md:flex">
               {isLoading ? (
@@ -105,26 +104,6 @@ export const InvoicesList = () => {
                   <span>Refresh</span>
                 </Button>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="secondary" size="icon">
-                    <LogOut className="w-h h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Do you wish to logout?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Your session will be cleared. You will have to enter your database ID again to
-                      get here.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onLogout}>Yes</AlertDialogCancel>
-                    <AlertDialogAction>No, Stay here!</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </CardTitle>
         </CardHeader>
@@ -132,26 +111,35 @@ export const InvoicesList = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap">Name</TableHead>
-                <TableHead className="whitespace-nowrap">ID</TableHead>
-                <TableHead className="whitespace-nowrap">To</TableHead>
-                <TableHead className="whitespace-nowrap">Due Date</TableHead>
-                <TableHead className="whitespace-nowrap">Amount</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Action</TableHead>
+                {["#", "Name", "Number", "To", "Due Date", ""].map((item, index) => {
+                  return (
+                    <TableHead
+                      key={index}
+                      className={cn("whitespace-nowrap", item == "" && "text-right")}>
+                      {item}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="whitespace-nowrap">{invoice.name}</TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <NavLink to={`/${databaseId}/${invoice.id}`}>#{invoice.number}</NavLink>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {[invoice.invoiceTo, invoice.phone].join(", ")}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">{invoice.invoiceDate}</TableCell>
-                  <TableCell className="whitespace-nowrap">{invoice.amount.toFixed(2)}</TableCell>
+              {invoices.map((invoice, index) => (
+                <TableRow key={index}>
+                  {[
+                    index + 1,
+                    invoice.name,
+                    <NavLink key={2} to={`/${databaseId}/${invoice.id}`}>
+                      #{invoice.number}
+                    </NavLink>,
+                    [invoice.invoiceTo, invoice.phone].join(", "),
+                    new Date(invoice.invoiceDate).toDateString(),
+                  ].map((item, index) => {
+                    return (
+                      <TableCell key={index} className="whitespace-nowrap">
+                        {item}
+                      </TableCell>
+                    );
+                  })}
                   <TableCell className="flex justify-end whitespace-nowrap">
                     <Button asChild size="sm" variant="ghost">
                       <NavLink to={`/${databaseId}/${invoice.id}`}>
@@ -167,30 +155,46 @@ export const InvoicesList = () => {
               <TableRow>
                 <TableCell colSpan={6}>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onGetInvoiceSubmit)}>
-                      <div className="flex items-center justify-end space-x-4">
-                        <p className="text-sm text-muted-foreground">
-                          Couldn&apos;t find what you are looking for?
-                        </p>
+                    <form
+                      onSubmit={form.handleSubmit(onGetInvoiceSubmit)}
+                      className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
                         <FormField
                           control={form.control}
                           name="invoiceId"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Enter your invoice Id"
-                                  className="w-80"
-                                />
+                                <Input {...field} placeholder="Enter Invoice Id" className="w-80" />
                               </FormControl>
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" variant="secondary">
-                          Get Invoice
+                        <Button type="submit" variant="secondary" size="sm">
+                          Get Invoice by ID
                         </Button>
                       </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <LogOut className="w-h h-4" />
+                            <span className="ml-2">Logout</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Do you wish to logout?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Your session will be cleared. You will have to enter your database ID
+                              again to get here.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={onLogout}>Yes</AlertDialogCancel>
+                            <AlertDialogAction>No, Stay here!</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </form>
                   </Form>
                 </TableCell>

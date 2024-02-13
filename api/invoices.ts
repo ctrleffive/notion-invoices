@@ -1,46 +1,28 @@
 import { Client } from "@notionhq/client";
 
+import { apiResponse, transformInvoice } from "./helpers.ts";
+
 const apiKey = process.env.NOTION_SECRET;
 const notion = new Client({ auth: apiKey });
 
 export async function GET(request: any) {
-  try {
+  // try {
     const url = new URL(request.url);
-    const databaseId = url.searchParams.get("databaseId");
+    const database_id = url.searchParams.get("databaseId");
     const invoiceId = url.searchParams.get("invoiceId");
 
-    if (!databaseId) throw new Error("no-databaseId");
+    if (!database_id) throw new Error("no-databaseId");
 
     if (!invoiceId) {
-      const notionResponse = await notion.databases.query({
-        database_id: databaseId,
-      });
-
+      const notionResponse = await notion.databases.query({ database_id });
       const invoices: any[] = notionResponse.results.map((item: any) => {
-        return {
-          id: item.id,
-          number: item.properties["Number"].formula.number,
-          name: item.properties["Name"].title[0]?.plain_text,
-          invoiceTo: item.properties["Invoice To"].rich_text[0]?.plain_text,
-          address: item.properties["Address"].rich_text[0]?.plain_text,
-          email: item.properties["Email"].rich_text[0]?.plain_text,
-          phone: item.properties["Phone"].rich_text[0]?.plain_text,
-          contactEmail: item.properties["Contact Email"].rich_text[0]?.plain_text,
-          contactPhone: item.properties["Contact Phone"].rich_text[0]?.plain_text,
-          contactLocation: item.properties["Contact Location"].rich_text[0]?.plain_text,
-          invoiceDate: item.properties["Invoice Date"].date.start,
-          dueDate: item.properties["Due Date"].date.start,
-          signedBy: item.properties["Signed By"].select.name,
-          amount: item.properties["Amount"].number,
-        };
+        return transformInvoice(item);
       });
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: invoices,
-        }),
-      );
+      return apiResponse({
+        success: true,
+        data: invoices,
+      });
     } else {
       const promises: any[] = await Promise.all([
         notion.pages.retrieve({ page_id: invoiceId }),
@@ -50,46 +32,13 @@ export async function GET(request: any) {
       const block_id = contentResponse.results[0]?.id;
 
       const tableResponse = await notion.blocks.children.list({ block_id });
-      const results: any[] = tableResponse.results;
 
-      results.shift();
-
-      const items = results.map((item: any) => {
-        return {
-          item: item.table_row.cells[0][0]?.plain_text,
-          quantity: Number(item.table_row.cells[1][0]?.plain_text),
-          price: Number(item.table_row.cells[2][0]?.plain_text),
-        };
+      return apiResponse({
+        success: true,
+        data: transformInvoice(pageResponse, tableResponse.results),
       });
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            id: pageResponse.id,
-            number: pageResponse.properties["Number"].formula.number,
-            name: pageResponse.properties["Name"].title[0]?.plain_text,
-            invoiceTo: pageResponse.properties["Invoice To"].rich_text[0]?.plain_text,
-            address: pageResponse.properties["Address"].rich_text[0]?.plain_text,
-            email: pageResponse.properties["Email"].rich_text[0]?.plain_text,
-            phone: pageResponse.properties["Phone"].rich_text[0]?.plain_text,
-            contactEmail: pageResponse.properties["Contact Email"].rich_text[0]?.plain_text,
-            contactPhone: pageResponse.properties["Contact Phone"].rich_text[0]?.plain_text,
-            contactLocation: pageResponse.properties["Contact Location"].rich_text[0]?.plain_text,
-            invoiceDate: pageResponse.properties["Invoice Date"].date.start,
-            dueDate: pageResponse.properties["Due Date"].date.start,
-            signedBy: pageResponse.properties["Signed By"].select.name,
-            amount: pageResponse.properties["Amount"].number,
-            items,
-          },
-        }),
-        { headers: { "Content-Type": "application/json" } },
-      );
     }
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ success: false, message: error.message || "unknown" }, null, "  "),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  }
+  // } catch (error) {
+  //   return apiResponse({ success: false, message: error.message });
+  // }
 }

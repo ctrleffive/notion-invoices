@@ -1,5 +1,7 @@
 import { Client } from "@notionhq/client";
 
+import { apiResponse, transformDatabase } from "./helpers.ts";
+
 const apiKey = process.env.NOTION_SECRET;
 const notion = new Client({ auth: apiKey });
 
@@ -16,20 +18,11 @@ export async function GET(request: any) {
 
     const database: any = notionResponse;
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          id: database.id,
-          name: database.title[0]?.plain_text,
-          icon: database.icon?.file?.url,
-        },
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  } catch (error) {
-    return new Response(JSON.stringify({ success: false, message: error?.message || "unknown" }), {
-      headers: { "Content-Type": "application/json" },
+    return apiResponse({
+      success: true,
+      data: transformDatabase(database),
     });
+  } catch (error) {
+    return apiResponse({ success: false, message: error?.message });
   }
 }

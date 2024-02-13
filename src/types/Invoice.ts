@@ -1,5 +1,7 @@
 export interface InvoiceModel {
   id: string;
+  company: string;
+  logo: string;
   number: number;
   name: string;
   invoiceTo: string;
@@ -8,10 +10,12 @@ export interface InvoiceModel {
   contactEmail: string;
   contactPhone: string;
   contactLocation: string;
-  address: string;
-  invoiceDate: string;
-  dueDate: string;
+  toAddress: string;
+  fromAddress: string;
+  invoiceDate: number;
+  dueDate: number;
   signedBy: string;
+  currency: string;
   amount: number;
   items: {
     item: string;

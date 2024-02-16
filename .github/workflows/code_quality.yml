@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  quality:
+  Biome:
     runs-on: macos-latest
     steps:
       - name: Checkout

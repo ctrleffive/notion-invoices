@@ -97,7 +97,7 @@ export const InvoiceDetails = () => {
             <div className="mb-4 font-bold uppercase text-muted-foreground">Invoice To:</div>
             <div className="text-2xl font-bold">{invoice?.invoiceTo}</div>
             <div>{invoice?.toAddress}</div>
-            <div>{[invoice?.phone, invoice?.email].join(", ")}</div>
+            <div>{[invoice?.phone, invoice?.email].filter(item => item).join(", ")}</div>
           </div>
           <div className="mt-6 space-y-2 md:mt-0 md:text-right print:mt-0 print:text-right">
             <div>

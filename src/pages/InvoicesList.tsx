@@ -131,7 +131,7 @@ export const InvoicesList = () => {
                     <NavLink key={2} to={`/${databaseId}/${invoice.id}`}>
                       #{invoice.number}
                     </NavLink>,
-                    [invoice.invoiceTo, invoice.phone].join(", "),
+                    [invoice.invoiceTo, invoice.phone].filter(item => item).join(", "),
                     new Date(invoice.invoiceDate).toDateString(),
                   ].map((item, index) => {
                     return (
